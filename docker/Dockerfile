@@ -125,6 +125,9 @@ RUN chmod +x /usr/local/bin/docker-entrypoint.sh && \
 FROM build-${TARGETARCH} AS build
 RUN echo "Running common build flow of AnythingLLM image for all architectures"
 
+ARG BASE_PATH=/anythingllm/
+ENV VITE_BASE=${BASE_PATH}
+
 USER anythingllm
 WORKDIR /app
 
@@ -133,7 +136,7 @@ FROM build AS frontend-build
 COPY --chown=anythingllm:anythingllm ./frontend /app/frontend/
 WORKDIR /app/frontend
 RUN yarn install --network-timeout 100000 && yarn cache clean
-RUN yarn build && \
+RUN yarn build --base ${VITE_BASE} && \
     cp -r dist /tmp/frontend-build && \
     rm -rf * && \
     cp -r /tmp/frontend-build dist && \
