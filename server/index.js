@@ -1,69 +1,64 @@
 // server/index.js
 
-// Chargement des variables d'environnement
+// 1) Chargement des .env
 if (process.env.NODE_ENV === "development") {
   require("dotenv").config({ path: `.env.${process.env.NODE_ENV}` });
 } else {
   require("dotenv").config();
 }
 
-// Initialisation du logger
+// 2) Logger
 require("./utils/logger")();
 
+// 3) Récupération du préfixe (sans slash final)
+const BASE = (process.env.BASE_URL || process.env.PUBLIC_URL || "/").replace(/\/+$/, "");
+
+// 4) Imports génériques
 const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const path = require("path");
 const { reqBody } = require("./utils/http");
-
-// Import des endpoints
-const {
-  systemEndpoints,
-  workspaceEndpoints,
-  chatEndpoints,
-  embeddedEndpoints,
-  embedManagementEndpoints,
-  adminEndpoints,
-  inviteEndpoints,
-  utilEndpoints,
-  developerEndpoints,
-  extensionEndpoints,
-  workspaceThreadEndpoints,
-  documentEndpoints,
-  experimentalEndpoints,
-  browserExtensionEndpoints,
-  communityHubEndpoints,
-  agentFlowEndpoints,
-  mcpServersEndpoints,
-} = require("./endpoints");
-
-// Bootstrap HTTPS/HTTP
 const { bootHTTP, bootSSL } = require("./utils/boot");
 
+// 5) Imports point par point de chaque endpoint
+const { systemEndpoints }           = require("./endpoints/system");
+const { extensionEndpoints }        = require("./endpoints/extensions");
+const { workspaceEndpoints }        = require("./endpoints/workspaces");
+const { workspaceThreadEndpoints }  = require("./endpoints/workspaceThreads");
+const { chatEndpoints }             = require("./endpoints/chat");
+const { embedManagementEndpoints }  = require("./endpoints/embedManagement");
+const { embeddedEndpoints }         = require("./endpoints/embed");
+const { documentEndpoints }         = require("./endpoints/document");
+const { utilEndpoints }             = require("./endpoints/utils");
+const { developerEndpoints }        = require("./endpoints/api");           // attention : c’est un dossier avec index.js
+const { adminEndpoints }            = require("./endpoints/admin");
+const { inviteEndpoints }           = require("./endpoints/invite");
+const { experimentalEndpoints }     = require("./endpoints/experimental");
+const { browserExtensionEndpoints } = require("./endpoints/browserExtension");
+const { communityHubEndpoints }     = require("./endpoints/communityHub");
+const { agentFlowEndpoints }        = require("./endpoints/agentFlows");
+const { mcpServersEndpoints }       = require("./endpoints/mcpServers");
+
+// 6) Création de l’app Express
 const app = express();
 const apiRouter = express.Router();
-const FILE_LIMIT = "3GB";
 
-// Middlewares globaux
+// 7) Middlewares globaux
 app.use(cors({ origin: true }));
-app.use(bodyParser.text({ limit: FILE_LIMIT }));
-app.use(bodyParser.json({ limit: FILE_LIMIT }));
-app.use(
-  bodyParser.urlencoded({
-    limit: FILE_LIMIT,
-    extended: true,
-  })
-);
+app.use(bodyParser.text({ limit: "3GB" }));
+app.use(bodyParser.json({ limit: "3GB" }));
+app.use(bodyParser.urlencoded({ limit: "3GB", extended: true }));
 
-// WebSockets ou HTTPS
+// 8) WebSockets ou HTTPS
 if (process.env.ENABLE_HTTPS) {
   bootSSL(app, process.env.SERVER_PORT || 3001);
 } else {
   require("@mintplex-labs/express-ws").default(app);
 }
 
-// Montage des routes API
-app.use("/api", apiRouter);
+// 9) Tous les endpoints REST sous `${BASE}/api`
+app.use(`${BASE}/api`, apiRouter);
 systemEndpoints(apiRouter);
 extensionEndpoints(apiRouter);
 workspaceEndpoints(apiRouter);
@@ -80,71 +75,66 @@ communityHubEndpoints(apiRouter);
 agentFlowEndpoints(apiRouter);
 mcpServersEndpoints(apiRouter);
 
-// Externally facing embedder endpoints
+// 10) Endpoints « embed » et « developer » (utilisent `app` + `apiRouter`)
 embeddedEndpoints(apiRouter);
-
-// Developer API
 developerEndpoints(app, apiRouter);
 
-// En production (pas en dev), on sert le front
+// 11) En production, on sert la SPA derrière le même préfixe :
 if (process.env.NODE_ENV !== "development") {
   const { MetaGenerator } = require("./utils/boot/MetaGenerator");
   const IndexPage = new MetaGenerator();
 
-  // Sert tous les fichiers static (JS, CSS, images…) à la racine
+  // 11.a) tous les fichiers statiques (/index.js, /index.css, favicon…)  
   app.use(
     express.static(path.resolve(__dirname, "public"), {
       extensions: ["js"],
       setHeaders: (res) => {
-        // Désactive l'i-framing et le header X-Powered-By
         res.removeHeader("X-Powered-By");
         res.setHeader("X-Frame-Options", "DENY");
       },
     })
   );
 
-  // Fallback SPA : toutes les routes non-API redirigent vers index.html
-  app.get("*", (req, res) => {
-    if (req.path.startsWith("/api/")) {
-      // on laisse les 404 pour les APIs invalides
+  // 11.b) fallback SPA : toute URL `BASE/...` non /api renvoie index.html  
+  app.get(`${BASE}/*`, (req, res) => {
+    if (req.path.startsWith(`${BASE}/api/`)) {
       return res.sendStatus(404);
     }
     return IndexPage.generate(res);
   });
 
-  // robots.txt à la racine
-  app.get("/robots.txt", (req, res) => {
-    res.type("text/plain");
-    res.send("User-agent: *\nDisallow: /").end();
+  // 11.c) robots.txt
+  app.get(`${BASE}/robots.txt`, (_, res) => {
+    res.type("text/plain").send("User-agent: *\nDisallow: /");
   });
-} else {
-  // Debug route en développement pour VectorDB
-  apiRouter.post("/v/:command", async (request, response) => {
+}
+
+// 12) Route de debug dev pour VectorDB
+else {
+  apiRouter.post("/v/:command", async (req, res) => {
     try {
       const VectorDb = require("./utils/helpers").getVectorDbClass();
-      const { command } = request.params;
-      if (!Object.getOwnPropertyNames(VectorDb).includes(command)) {
-        return response.status(500).json({
+      const { command } = req.params;
+      if (!Object.hasOwnProperty.call(VectorDb, command)) {
+        return res.status(500).json({
           message: "invalid interface command",
           commands: Object.getOwnPropertyNames(VectorDb),
         });
       }
-      const body = reqBody(request);
-      const resBody = await VectorDb[command](body);
-      response.status(200).json(resBody);
+      const body = reqBody(req);
+      const result = await VectorDb[command](body);
+      return res.status(200).json(result);
     } catch (e) {
       console.error(e);
-      response.status(500).json({ error: e.message });
+      return res.status(500).json({ error: e.message });
     }
   });
 }
 
-// Toutes les autres routes hors /api/* renvoient 404
-app.all("*", (req, res) => {
-  res.sendStatus(404);
-});
+// 13) Tout le reste fait 404
+app.all("*", (_req, res) => res.sendStatus(404));
 
-// Démarrage du serveur HTTP si HTTPS n'est pas activé
+// 14) Démarrage HTTP si pas de TLS
 if (!process.env.ENABLE_HTTPS) {
   bootHTTP(app, process.env.SERVER_PORT || 3001);
 }

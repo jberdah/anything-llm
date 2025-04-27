@@ -23,6 +23,7 @@ import System from "@/models/system";
 import Option from "./MenuOption";
 import { CanViewChatHistoryProvider } from "../CanViewChatHistory";
 
+
 export default function SettingsSidebar() {
   const { t } = useTranslation();
   const { logo } = useLogo();
@@ -94,12 +95,12 @@ export default function SettingsSidebar() {
                   />
                 </div>
                 <div className="flex gap-x-2 items-center text-slate-500 shrink-0">
-                  <a
-                    href={paths.home()}
+                  <Link
+                    to={paths.home()}
                     className="transition-all duration-300 p-2 rounded-full text-white bg-theme-action-menu-bg hover:bg-theme-action-menu-item-hover hover:border-slate-100 hover:border-opacity-50 border-transparent border"
                   >
                     <House className="h-4 w-4" />
-                  </a>
+                  </Link>
                 </div>
               </div>
 
@@ -301,18 +302,24 @@ const SidebarOptions = ({ user = null, t }) => (
               href: paths.communityHub.trending(),
               flex: true,
               roles: ["admin"],
+              target: "_blank",
+              rel: "noopener noreferrer",
             },
             {
               btnText: "Your Account",
               href: paths.communityHub.authentication(),
               flex: true,
               roles: ["admin"],
+              target: "_blank",
+              rel: "noopener noreferrer",
             },
             {
               btnText: "Import Item",
               href: paths.communityHub.importItem(),
               flex: true,
               roles: ["admin"],
+              target: "_blank",
+              rel: "noopener noreferrer",
             },
           ]}
         />

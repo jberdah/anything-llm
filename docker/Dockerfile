@@ -120,33 +120,45 @@ RUN chmod +x /usr/local/bin/docker-entrypoint.sh && \
 #############################################
 # COMMON BUILD FLOW FOR ALL ARCHS
 #############################################
+ARG BASE_PATH
 
 # hadolint ignore=DL3006
 FROM build-${TARGETARCH} AS build
 RUN echo "Running common build flow of AnythingLLM image for all architectures"
 
-ARG BASE_PATH=/anythingllm/
 ENV VITE_BASE=${BASE_PATH}
+ARG BASE_PATH
 
 USER anythingllm
 WORKDIR /app
 
 # Install & Build frontend layer
 FROM build AS frontend-build
+
 COPY --chown=anythingllm:anythingllm ./frontend /app/frontend/
+COPY --chown=anythingllm:anythingllm ./frontend/.env.production /app/frontend/.env
 WORKDIR /app/frontend
+
+ARG VITE_API_BASE
+ENV VITE_API_BASE=${VITE_API_BASE}
+
+# Install deps
 RUN yarn install --network-timeout 100000 && yarn cache clean
-RUN yarn build --base ${VITE_BASE} && \
+
+# Build uniquement via Vite
+RUN npx vite build && \
     cp -r dist /tmp/frontend-build && \
     rm -rf * && \
     cp -r /tmp/frontend-build dist && \
     rm -rf /tmp/frontend-build
+
 WORKDIR /app
 
 # Install server layer
 # Also pull and build collector deps (chromium issues prevent bad bindings)
 FROM build AS backend-build
 COPY --chown=anythingllm:anythingllm ./server /app/server/
+COPY --chown=anythingllm:anythingllm ./server/.env.production /app/server/.env
 WORKDIR /app/server
 RUN yarn install --production --network-timeout 100000 && yarn cache clean
 WORKDIR /app
@@ -164,14 +176,18 @@ USER anythingllm
 FROM backend-build AS production-build
 WORKDIR /app
 COPY --chown=anythingllm:anythingllm --from=frontend-build /app/frontend/dist /app/server/public
+
 USER root
-RUN chown -R anythingllm:anythingllm /app/server && \
-    chown -R anythingllm:anythingllm /app/collector
+RUN chown -R anythingllm:anythingllm /app/server /app/collector
+
 USER anythingllm
 
 # Setup the environment
+ENV BASE_URL=${BASE_PATH}
+ENV PUBLIC_URL=${BASE_PATH}
 ENV NODE_ENV=production
 ENV ANYTHING_LLM_RUNTIME=docker
+ENV SERVER_PORT=3001
 
 # Setup the healthcheck
 HEALTHCHECK --interval=1m --timeout=10s --start-period=1m \

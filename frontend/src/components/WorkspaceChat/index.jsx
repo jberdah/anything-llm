@@ -4,7 +4,7 @@ import LoadingChat from "./LoadingChat";
 import ChatContainer from "./ChatContainer";
 import paths from "@/utils/paths";
 import ModalWrapper from "../ModalWrapper";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { DnDFileUploaderProvider } from "./ChatContainer/DnDWrapper";
 
 export default function WorkspaceChat({ loading, workspace }) {
@@ -46,12 +46,12 @@ export default function WorkspaceChat({ loading, workspace }) {
                 </p>
 
                 <div className="flex w-full justify-center items-center mt-4">
-                  <a
-                    href={paths.home()}
+                  <Link
+                    to={paths.home()}
                     className="transition-all duration-300 bg-white text-black hover:opacity-60 px-4 py-2 rounded-lg text-sm flex items-center gap-x-2"
                   >
                     Go back to homepage
-                  </a>
+                  </Link>
                 </div>
               </div>
             </div>

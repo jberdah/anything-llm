@@ -7,6 +7,7 @@ import { CheckCircle } from "@phosphor-icons/react";
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 
 async function sendQuestionnaire({ email, useCase, comment }) {
   if (import.meta.env.DEV) {
@@ -114,12 +115,12 @@ export default function Survey({ setHeader, setForwardBtn, setBackBtn }) {
             <p className="text-white text-lg">
               {t("onboarding.survey.thankYou")}
             </p>
-            <a
-              href={paths.mailToMintplex()}
+            <Link
+              to={paths.mailToMintplex()}
               className="text-sky-400 underline text-xs"
             >
               team@mintplexlabs.com
-            </a>
+            </Link>
           </div>
         </div>
       </div>

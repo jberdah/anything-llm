@@ -7,81 +7,72 @@ import { visualizer } from "rollup-plugin-visualizer"
 
 dns.setDefaultResultOrder("verbatim")
 
-// https://vitejs.dev/config/
+// pick up the same BASE_PATH you injected at build-time
+const BASE = process.env.VITE_BASE || process.env.BASE_URL || process.env.PUBLIC_URL || "/"
+
 export default defineConfig({
-  assetsInclude: [
-    './public/piper/ort-wasm-simd-threaded.wasm',
-    './public/piper/piper_phonemize.wasm',
-    './public/piper/piper_phonemize.data',
-  ],
-  worker: {
-    format: 'es'
-  },
-  server: {
-    port: 3000,
-    host: "localhost"
-  },
+  base: BASE,
   define: {
-    "process.env": process.env
+    // your API calls will now use <BASE>/api/…
+    "process.env.API_BASE": JSON.stringify(`${BASE}api/`)
   },
-  css: {
-    postcss
-  },
+
   plugins: [
     react(),
-    visualizer({
-      template: "treemap", // or sunburst
-      open: false,
-      gzipSize: true,
-      brotliSize: true,
-      filename: "bundleinspector.html" // will be saved in project's root
-    })
+    visualizer({ template: "treemap", open: false, gzipSize: true, brotliSize: true, filename: "bundleinspector.html" })
   ],
+
   resolve: {
     alias: [
-      {
-        find: "@",
-        replacement: fileURLToPath(new URL("./src", import.meta.url))
-      },
-      {
-        process: "process/browser",
-        stream: "stream-browserify",
-        zlib: "browserify-zlib",
-        util: "util",
-        find: /^~.+/,
-        replacement: (val) => {
-          return val.replace(/^~/, "")
-        }
-      }
+      // your @ → /src alias
+      { find: "@", replacement: fileURLToPath(new URL("./src", import.meta.url)) },
+      // polyfill node-core in the browser
+      { find: "process", replacement: "process/browser" },
+      { find: "stream",  replacement: "stream-browserify" },
+      { find: "zlib",    replacement: "browserify-zlib" },
+      { find: "util",    replacement: "util" },
+      // support ~ imports
+      { find: /^~(.+)/,  replacement: (_match, p1) => p1 }
     ]
   },
+
+  optimizeDeps: {
+    // force these through esbuild so they never hit Rollup’s CJS plugin
+    include: [
+      "@mintplex-labs/piper-tts-web",
+      "react-router",
+      "react-router-dom",
+      "html-parse-stringify",
+      "void-elements"
+    ],
+    esbuildOptions: {
+      define: { global: "globalThis" },
+      plugins: []
+    }
+  },
+
   build: {
     rollupOptions: {
       output: {
-        // These settings ensure the primary JS and CSS file references are always index.{js,css}
-        // so we can SSR the index.html as text response from server/index.js without breaking references each build.
-        entryFileNames: 'index.js',
-        assetFileNames: (assetInfo) => {
-          if (assetInfo.name === 'index.css') return `index.css`;
-          return assetInfo.name;
-        },
+        entryFileNames:  "index.js",
+        assetFileNames: (asset) => asset.name === "index.css" ? "index.css" : asset.name
       },
-      external: [
-        // Reduces transformation time by 50% and we don't even use this variant, so we can ignore.
-        /@phosphor-icons\/react\/dist\/ssr/,
-      ]
+      external: [/@phosphor-icons\/react\/dist\/ssr/]
     },
     commonjsOptions: {
-      transformMixedEsModules: true
+      include: [/node_modules/],
+      transformMixedEsModules: true,
+      // turn CJS `module.exports = …` into a default export
+      requireReturnsDefault: "preferred"
     }
   },
-  optimizeDeps: {
-    include: ["@mintplex-labs/piper-tts-web"],
-    esbuildOptions: {
-      define: {
-        global: "globalThis"
-      },
-      plugins: []
-    }
-  }
+
+  css: { postcss },
+  server: { port: 3000, host: "localhost" },
+  assetsInclude: [
+    "./public/piper/ort-wasm-simd-threaded.wasm",
+    "./public/piper/piper_phonemize.wasm",
+    "./public/piper/piper_phonemize.data"
+  ],
+  worker: { format: "es" }
 })

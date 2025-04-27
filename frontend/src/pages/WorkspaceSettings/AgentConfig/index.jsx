@@ -3,6 +3,7 @@ import Workspace from "@/models/workspace";
 import showToast from "@/utils/toast";
 import { castToType } from "@/utils/types";
 import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import AgentLLMSelection from "./AgentLLMSelection";
 import Admin from "@/models/admin";
 import * as Skeleton from "react-loading-skeleton";
@@ -90,12 +91,12 @@ export default function WorkspaceAgentConfiguration({ workspace }) {
           <>
             {!hasChanges && (
               <div className="flex flex-col gap-y-4">
-                <a
+                <Link
                   className="w-fit transition-all duration-300 border border-slate-200 px-5 py-2.5 rounded-lg text-white text-sm items-center flex gap-x-2 hover:bg-slate-200 hover:text-slate-800 focus:ring-gray-800"
-                  href={paths.settings.agentSkills()}
+                  to={paths.settings.agentSkills()}
                 >
                   Configure Agent Skills
-                </a>
+                </Link>
                 <p className="text-white text-opacity-60 text-xs font-medium">
                   Customize and enhance the default agent's capabilities by
                   enabling or disabling specific skills. These settings will be

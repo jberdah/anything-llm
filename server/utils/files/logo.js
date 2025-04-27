@@ -31,21 +31,36 @@ function getDefaultFilename(darkMode = true) {
 }
 
 async function determineLogoFilepath(defaultFilename = LOGO_FILENAME) {
+  // 1) Récupère le nom de fichier custom s’il y en a un
   const currentLogoFilename = await SystemSettings.currentLogoFilename();
+
+  // 2) Construction du chemin dans storage/assets
   const basePath = process.env.STORAGE_DIR
     ? path.join(process.env.STORAGE_DIR, "assets")
     : path.join(__dirname, "../../storage/assets");
   const defaultFilepath = path.join(basePath, defaultFilename);
 
+  // 3) Si un logo custom est configuré et valide, on l’utilise
   if (currentLogoFilename && validFilename(currentLogoFilename)) {
-    customLogoPath = path.join(basePath, normalizePath(currentLogoFilename));
-    if (!isWithin(path.resolve(basePath), path.resolve(customLogoPath)))
-      return defaultFilepath;
-    return fs.existsSync(customLogoPath) ? customLogoPath : defaultFilepath;
+    const customLogoPath = path.join(basePath, normalizePath(currentLogoFilename));
+    if (
+      isWithin(path.resolve(basePath), path.resolve(customLogoPath)) &&
+      fs.existsSync(customLogoPath)
+    ) {
+      return customLogoPath;
+    }
   }
 
-  return defaultFilepath;
+  // 4) Si le fichier par défaut existe dans storage/assets, on le retourne
+  if (fs.existsSync(defaultFilepath)) {
+    return defaultFilepath;
+  }
+
+  // 5) Sinon, on bascule sur le dossier public (inclus dans l’image Docker)
+  const publicPath = path.join(__dirname, "../../public", defaultFilename);
+  return publicPath;
 }
+
 
 function fetchLogo(logoPath) {
   if (!fs.existsSync(logoPath)) {

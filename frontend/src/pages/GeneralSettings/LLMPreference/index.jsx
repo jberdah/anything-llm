@@ -401,7 +401,7 @@ export default function GeneralLLMPreference() {
               <div className="w-full justify-end flex">
                 {hasChanges && (
                   <CTAButton
-                    onClick={() => handleSubmit()}
+                    type="submit"
                     className="mt-3 mr-0 -mb-14 z-10"
                   >
                     {saving ? "Saving..." : "Save changes"}

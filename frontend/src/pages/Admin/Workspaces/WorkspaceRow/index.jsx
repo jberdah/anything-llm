@@ -2,6 +2,8 @@ import { useRef } from "react";
 import Admin from "@/models/admin";
 import paths from "@/utils/paths";
 import { LinkSimple, Trash } from "@phosphor-icons/react";
+import { Link } from "react-router-dom";
+
 
 export default function WorkspaceRow({ workspace, users }) {
   const rowRef = useRef(null);
@@ -26,22 +28,22 @@ export default function WorkspaceRow({ workspace, users }) {
           {workspace.name}
         </th>
         <td className="px-6 flex items-center">
-          <a
-            href={paths.workspace.chat(workspace.slug)}
+          <Link
+            to={paths.workspace.chat(workspace.slug)}
             target="_blank"
             rel="noreferrer"
             className="text-white flex items-center hover:underline"
           >
             <LinkSimple className="mr-2 w-4 h-4" /> {workspace.slug}
-          </a>
+          </Link>
         </td>
         <td className="px-6">
-          <a
-            href={paths.workspace.settings.members(workspace.slug)}
+          <Link
+            to={paths.workspace.settings.members(workspace.slug)}
             className="text-white flex items-center underline"
           >
             {workspace.userIds?.length}
-          </a>
+          </Link>
         </td>
         <td className="px-6">{workspace.createdAt}</td>
         <td className="px-6 flex items-center gap-x-6 h-full mt-1">

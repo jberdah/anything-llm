@@ -9,7 +9,7 @@ import {
   X,
 } from "@phosphor-icons/react";
 import { useEffect, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 
 const THREAD_CALLOUT_DETAIL_WIDTH = 26;
 export default function ThreadItem({
@@ -87,8 +87,8 @@ export default function ThreadItem({
             )}
           </div>
         ) : (
-          <a
-            href={
+          <Link
+            to={
               window.location.pathname === linkTo || ctrlPressed ? "#" : linkTo
             }
             className="w-full pl-2 py-1 overflow-hidden"
@@ -101,7 +101,7 @@ export default function ThreadItem({
             >
               {thread.name}
             </p>
-          </a>
+          </Link>
         )}
         {!!thread.slug && !thread.deleted && (
           <div ref={optionsContainer} className="flex items-center">

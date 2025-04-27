@@ -1,6 +1,7 @@
 import paths from "@/utils/paths";
 import { ArrowCircleUpRight } from "@phosphor-icons/react";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 
 export default function Resources() {
   const { t } = useTranslation();
@@ -10,24 +11,24 @@ export default function Resources() {
         {t("main-page.resources.title")}
       </h1>
       <div className="flex gap-x-6">
-        <a
+        <Link
           target="_blank"
           rel="noopener noreferrer "
-          href={paths.docs()}
+          to={paths.docs()}
           className="text-theme-home-text text-sm flex items-center gap-x-2 hover:opacity-70"
         >
           {t("main-page.resources.links.docs")}
           <ArrowCircleUpRight weight="fill" size={16} />
-        </a>
-        <a
-          href={paths.github()}
+        </Link>
+        <Link
+          to={paths.github()}
           target="_blank"
           rel="noopener noreferrer"
           className="text-theme-home-text text-sm flex items-center gap-x-2 hover:opacity-70"
         >
           {t("main-page.resources.links.star")}
           <ArrowCircleUpRight weight="fill" size={16} />
-        </a>
+        </Link>
       </div>
     </div>
   );

@@ -16,3 +16,5 @@
 **/.log
 !docker/.env.example
 !frontend/.env.production
+!server/.env.production
+!frontend/.env

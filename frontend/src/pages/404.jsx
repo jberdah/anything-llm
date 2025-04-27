@@ -1,5 +1,6 @@
 import Header from "../components/Header";
 import Footer from "../components/Footer";
+import { Link } from "react-router-dom";
 
 export default function Contact() {
   return (
@@ -10,12 +11,13 @@ export default function Contact() {
           404 – Unavailable
         </h1>
         <br />
-        <a
+        <Link
           className="w-64 p-1 mx-auto font-bold text-center text-black border border-gray-500 rounded-lg sm:p-4"
-          href="/"
+          to={paths.home()} 
+          aria-label="Home"
         >
           Return Home
-        </a>
+        </Link>
       </div>
       <div className="mt-64"></div>
       <Footer />

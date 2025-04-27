@@ -1,13 +1,22 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -e
 
-# Send a request to the specified URL
-response=$(curl --write-out '%{http_code}' --silent --output /dev/null http://localhost:3001/api/ping)
+# Préfixe si défini (exemple "/anythingllm")
+BASE="${BASE_URL:-}"
 
-# If the HTTP response code is 200 (OK), the server is up
-if [ "$response" -eq 200 ]; then
-  echo "Server is up"
-  exit 0
-else
-  echo "Server is down"
+# On retire les slashs de fin s’il y en a plusieurs
+BASE=$(echo "$BASE" | sed 's:/*$::')
+
+# Port par défaut
+PORT="${SERVER_PORT:-3001}"
+
+URL="http://127.0.0.1:${PORT}${BASE}/api/ping"
+
+# essaie 3 fois avant d’échouer
+if ! curl --fail --silent --show-error --retry 3 --retry-delay 1 "$URL" >/dev/null; then
+  echo "Health check failed at $URL"
   exit 1
+else
+  echo "Health check ok at $URL"
+  exit 0
 fi

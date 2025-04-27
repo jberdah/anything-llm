@@ -1,4 +1,5 @@
-export const API_BASE = import.meta.env.VITE_API_BASE || "/api";
+const BASE = import.meta.env.BASE_URL || "/";
+export const API_BASE = import.meta.env.VITE_API_BASE || `${BASE.replace(/\/+$/, "")}/api`;
 export const ONBOARDING_SURVEY_URL = "https://onboarding.anythingllm.com";
 
 export const AUTH_USER = "anythingllm_user";
@@ -11,6 +12,7 @@ export const SEEN_WATCH_ALERT = "anythingllm_watched_document_alert";
 export const APPEARANCE_SETTINGS = "anythingllm_appearance_settings";
 
 export const OLLAMA_COMMON_URLS = [
+  "http://ollama:11434",
   "http://127.0.0.1:11434",
   "http://host.docker.internal:11434",
   "http://172.17.0.1:11434",
@@ -45,8 +47,8 @@ export const NVIDIA_NIM_COMMON_URLS = [
 ];
 
 export function fullApiUrl() {
-  if (API_BASE !== "/api") return API_BASE;
-  return `${window.location.origin}/api`;
+  if (/^https?:\/\//.test(API_BASE)) return API_BASE;
+  return `${window.location.origin}${API_BASE}`;
 }
 
 export const POPUP_BROWSER_EXTENSION_EVENT = "NEW_BROWSER_EXTENSION_CONNECTION";
